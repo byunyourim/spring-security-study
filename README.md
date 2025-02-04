@@ -56,18 +56,54 @@ Servlet Container가 요청을 받으면 DelegatingFilterProxy가 요청을 가�
 이후 Spring ApplicationContext에서 찾은 실제 Filter Bean에게 작업을 넘겨서 처리하도록 합니다.
 
 
-
-
 ![img_1.png](src/main/resources/static/img/img_1.png)
 
+추가적으로 DelegatingFilterProxy는 애플리케이션 시작 시점에 등록되지만, 
+실제 Filter Bean은 Lazy InitialZation으로 동작합니다.
+
+---
 
 ### FilterChainProxy
+DelegatingFilterProxy를 통해 받은 요청과 응답을 스프링 시큐리티 필터 체인에 전달하고, 작업을 위임합니다.
+Spring Security가 제공하는 특수한 필터로 여러 개의 Security Filter를 관리하고 실행합니다. 
+SecurityFilterChain을 통해 요청 경로에 맞는 필터들을 순차적으로 실행합니다.
 
+FilterChainProxy는 Spring Bean으로 등록되고, DelegatingFilterProxy에 의해
+Servlet Container의 필터로 동작합니다.
+
+중간에 FilterChainProxy를 두는 이유는 Spring Security의 모든 Servlet 지원이 이 필터에서 시작되기 때문입니다. 
+만약, 서블릿에서 문제가 발생한다면 FilterChainProxy에서 파악할 수 있습니다.
+
+
+
+#### flow
+
+- Client -> request -> Servlet Container -> DelegatingFilterProxy
+
+- DelegatingFilterProxy -> Spring ApplicationContext의 FilterChainProxy 호출
+
+- FilterChainProxy -> SecurityFilterChain을 통해 Security Filter 실행
+
+
+  
+![img.png](src/main/resources/static/img/filter_img.png)
+
+
+---
 
 ### SecurityFilterChain
+여러 개의 Security filter를 담는 곳으로, 
+Spring Security에 요청이 들어왔을 때, 어떤 필터를 통해 인증을 수행할지 결정합니다.
 
+
+![img_1.png](src/main/resources/static/img/securityfilterchain.png)
+
+---
 
 #### Security Filters
+
+
+
 
 
 
