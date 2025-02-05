@@ -175,6 +175,77 @@ try {
 }
 ```
 
+<br>
 
 ---
 
+# Authentication Architecture
+
+## SecurityContextHolder
+인증된 user의 정보를 저장하는 공간입니다.  
+
+![img.png](securitycontextHolder.png)
+
+
+
+--- 
+
+## SecurityContext
+SecurityContexTholder에서 얻은 현재 인증 된 사용자의 인증을 포함합니다.
+
+
+
+--- 
+
+## Authentication
+user가 제공한 자격 증명을 아래와 같이 사용됩니다.
+   
+1. 사용자가 입력한 자격 증명을 인증할 때 사용합니다. (isAuthenticated() -> false)
+2. 현재 인증된 사용자를 나타냅니다. (isAuthenticated() -> true)
+  
+##### Authentication의 구성 요소
+- principal : 현재 인증된 사용자를 나타내는 객체로, UserDetails 객체
+- credentials : 사용자 인증을 위해 제출된 비밀번호 또는 기타 인증 정보 (인증 후 삭제)
+- authorities : 사용자가 부여받은 권한, GrantedAuthority의 구현체인 SimpleGrantedAuthority가 사용된다.
+   
+--- 
+
+## GrantedAuthority
+주체(Principal)에게 부여된 권한입니다.
+
+--- 
+
+## AuthenticationManager
+Filter가 인증을 처리하는 인터페이스로, 기능만 정의되어 있습니다.    
+
+- authenticate(Authentication authentication) 메서드  
+
+--- 
+
+## ProviderManager
+AuthenticationManager의 구현체로, 여러 개의 AuthenticationProvider를 관리하고 인증을 처리합니다.
+   
+여러 인증 방식 (DB, SAML, LDAP등)을 지원하기 위해 여러 AuthenticationProvider을 관리합니다.
+  
+--- 
+
+## AuthenticationProvider
+Spring Security에서 특정 인증 방식을 담당하는 인터페이스로, 인증이 성공하면 인증된 Authentication 객체를 반환한다.  
+
+예로, DaoAuthenticationProvider는 사용자 이름/비밀번호 기반 인증을 지원하고, JWTauthenticationProvider는 JWT 토큰 인증을 지원합니다.
+   
+--- 
+
+## Request Credentials with AuthenticationEntryPoint
+클라이언트로부터 자격 증명을 요청하는 데 사용합니다. (로그인 페이지로 리디렉션 등)
+
+--- 
+
+## AbstractAuthenticationProcessingFilter
+인증에 사용되는 기본 필터입니다.
+  
+![img.png](abstractautneticationprocessfilter.png)
+
+--- 
+
+# Authorization Architecture

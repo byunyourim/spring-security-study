@@ -1,0 +1,16 @@
+spring:
+  data:
+  sql:
+    init:
+      mode: always
+
+
+  jpa:
+    open-in-view: true
+    hibernate:
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      dialect: org.hibernate.dialect.MySQL8InnoDBDialect
+    defer-datasource-initialization: true
+    generate-ddl: true
