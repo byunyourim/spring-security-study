@@ -92,19 +92,89 @@ Servlet Container의 필터로 동작합니다.
 ---
 
 ### SecurityFilterChain
-여러 개의 Security filter를 담는 곳으로, 
-Spring Security에 요청이 들어왔을 때, 어떤 필터를 통해 인증을 수행할지 결정합니다.
+여러 개의 Security filter의 집합   
+
+Spring Security에 요청이 들어왔을 때, 어떤 필터들이 실행될지 정의된 체인입니다.
+각 요청 경로에 따라 필터 목록이 다를 수 있습니다.
 
 
 ![img_1.png](src/main/resources/static/img/securityfilterchain.png)
 
 ---
 
-#### Security Filters
+### Security Filters
+SecurityFilterChain에 포함된 개별 필터로, 인증, 권한 검증, CSRF 보호 등 다양한 보안 작업을 처리합니다.
 
 
+#### 필터 체인에 Custom Filter 추가
+- addFilterBefore(Filter, Class<?>)	: 지정한 필터 전에 Custom Filter를 추가합니다.
+- addFilterAfter(Filter, Class<?>)	: 지정한 필터 후에 Custom Filter를 추가합니다.
+- addFilterAt(Filter, Class<?>)	: 지정한 필터 위치에서 교체합니다. 기존 필터를 Custom Filter로 대체합니다.
 
 
+####  Custom Filter 위치 선정 (Rule of Thumb)
+
+Custom Filter의 위치는 어떤 Security 이벤트 발생 후에 실행될지에 따라 결정합니다.
+- Authentication Filter의 경우 보안 설정 완료 후
+- Authorization Filter의 경우 사용자 인증 완료 후 (Security Context에 인증 정보가 있는 상태)
 
 
+---
+  
+If you create a Filter:  
+1. Implement the Filter interface
+2. Extend the OncePerRequestFilter class (which ensures that the filter 
+   is invoked once per request)
+   
+
+And then you need to add the filter to the SecurityFilterChain
+```java
+@Bean
+SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        // ...
+        .addFilterAfter(new TenantFilter(), AnonymousAuthenticationFilter.class);
+    return http.build();
+}
+```
+
+---
+
+#### 필터를 Spring Bean인 경우
+중복 호출 문제가 발생할 수 있어 FilterRegistrationBean을 사용해 Spring Boot의 자동
+등록을 비활성화 해야 합니다.
+
+---
+
+### Handling Security Exceptions
+애플리케이션 실행 중 인증 실패, 권한에서 예외가 발생할 수 있다. 
+예외 발생 시 사용자에게 알맞은 HTTP 응답을 보내야 하는데, 이 과정을 
+Spring Security에서 ExceptionTranslationFilter이 처리한다.  
+   
+AuthenticationFilter, AuthorizationFilter 다음에 위치하고, 예외가 발생할 때 호출된다.  
+
+`[ UsernamePasswordAuthenticationFilter → AuthorizationFilter → ExceptionTranslationFilter ]`
+   
+![img.png](src/main/resources/static/img/exception.png)
+  
+1. 먼전 FilterChain.doFilter(request, response)를 호출하여 필터를 실행합니다. 
+2. 인증 실패(AuthenticationException) -> SecurityContext를 초기화 -> 현재 HTTP 요청 저장 -> 인증 정보 요청
+3. 권한 거부(AccessDeniedException) -> AccessDeniedException이 발생하면, 접근을 거부한다.
+
+   
+##### pseudocode for ExceptionTranslationFilter
+```java
+try {
+	filterChain.doFilter(request, response);
+} catch (AccessDeniedException | AuthenticationException ex) {
+	if (!authenticated || ex instanceof AuthenticationException) {
+		startAuthentication();
+	} else {
+		accessDenied();
+	}
+}
+```
+
+
+---
 
